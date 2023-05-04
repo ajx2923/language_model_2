@@ -152,7 +152,7 @@ class LSTMModel(nn.Module):
 model = LSTMModel(vocab_size, embedding_dim, hidden_dim, num_layers, dropout_prob).to(device)
 # criterion = nn.CrossEntropyLoss()
 criterion = nn.CrossEntropyLoss(ignore_index=bpe_tokenizer.token_to_id("<pad>"))
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 # scheduler = StepLR(optimizer, step_size=5, gamma=0.5)  # Add learning rate scheduler
 # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9) # Changed to Exponential scheduler with gamma decay
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5, verbose=True)
