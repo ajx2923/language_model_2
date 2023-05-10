@@ -9,6 +9,9 @@ from collections import Counter
 import re
 from torch.optim.lr_scheduler import StepLR
 from tokenizers import Tokenizer, trainers, models, pre_tokenizers, decoders
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2Config
+from transformers import TextDataset, DataCollatorForLanguageModeling
+from transformers import Trainer, TrainingArguments
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

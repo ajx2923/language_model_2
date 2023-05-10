@@ -1,58 +1,45 @@
+import sys
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, pipeline
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
-import pickle
 
-from lstm_language_model import LSTMModel
+import sys
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, pipeline
+import torch
 
-def load_vocab(file_path):
-    with open(file_path, "rb") as f:
-        vocab = pickle.load(f)
-    stoi = {token: vocab[token] for token in vocab.get_itos()}
-    itos = {idx: token for idx, token in enumerate(vocab.get_itos())}
-    return stoi, itos
+def generate_text(prompt, model, tokenizer, max_length=500, num_return_sequences=1):
+    input_ids = tokenizer.encode(prompt, return_tensors='pt', truncation=True)
+    
+    generated_sequences = model.generate(
+        input_ids=input_ids,
+        max_length=max_length,
+        num_return_sequences=num_return_sequences,
+        no_repeat_ngram_size=2,
+        temperature=0.8,
+    )
 
+    generated_texts = []
+    for generated_sequence in generated_sequences:
+        text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True)
+        generated_texts.append(text)
 
-def tokenize_text(text, stoi):
-    tokens = [stoi[token] for token in text.split() if token in stoi]
-    return tokens
+    return generated_texts
 
-def tokens_to_text(tokens, itos):
-    text = ' '.join(itos[token] for token in tokens)
-    return text
+# Load the fine-tuned model from the output directory
+model_path = "./results"
+model = GPT2LMHeadModel.from_pretrained(model_path)
+model_name = "gpt2"
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
-def generate_text(model, stoi, itos, initial_text, temperature, text_length):
-    model.eval()
-    tokens = tokenize_text(initial_text, stoi)
-    hidden = model.init_hidden(1)
+# Get user inputs
+prompt = input("Enter a prompt: ")
+max_length = int(input("Enter the max length for generated text: "))
 
-    with torch.no_grad():
-        for _ in range(text_length):
-            input_tensor = torch.tensor([tokens[-1]]).unsqueeze(0).to(device)
-            output, hidden = model(input_tensor, hidden)
+# Generate text
+generated_texts = generate_text(prompt, model, tokenizer, max_length=max_length)
 
-            probabilities = torch.softmax(output / temperature, dim=-1).squeeze()
-            next_token = torch.multinomial(probabilities, 1).item()
-
-            tokens.append(next_token)
-
-    generated_text = tokens_to_text(tokens, itos)
-    return generated_text
-
-if __name__ == "__main__":
-    model_path = "trained_lstm_model.pth"
-    vocab_path = "vocab.pkl"  # Add this line; make sure it points to the correct file
-    model = torch.load(model_path)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    stoi, itos = load_vocab(vocab_path)  # Add this line after loading the model
-
-    initial_text = input("Enter your initial text: ")  # Get input from the user
-    temperature = 1.0
-    text_length = 200  # Adjust this value to control the length of the generated story
-
-    generated_text = generate_text(model, stoi, itos, initial_text, temperature, text_length)  # Update this line
-    print(generated_text)
+# Print generated text
+for idx, text in enumerate(generated_texts):
+    print(f"Generated Text {idx + 1}:")
+    print(text)
+    print("\n")
 
